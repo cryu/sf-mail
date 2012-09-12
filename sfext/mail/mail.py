@@ -10,7 +10,7 @@ from email.mime.text import MIMEText
 import email
 
 
-__all__ = ['Mailer', 'mail_module']
+__all__ = ['Mail', 'mail_module']
 
 class DummyServer(object):
     """a dummy mailer which does not send but stores mail. Can be used for testing"""
@@ -61,7 +61,7 @@ class DummyServerFactory(object):
 
 
 
-class Mailer(Module):
+class Mail(Module):
     """a mail module for starflyer which supports txt and html mailing
     """
 
@@ -147,6 +147,6 @@ class Mailer(Module):
         server.sendmail(fa, [to], msg.as_string())
         server.quit()
 
-mail_module = Mailer(__name__)
+mail_module = Mail(__name__)
 
 
