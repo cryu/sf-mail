@@ -1,5 +1,4 @@
-from starflyer import Module, AttributeMapper
-import urlparse
+from starflyer import Module
 import smtplib
 from email.mime.text import MIMEText
 from email.header import Header
@@ -15,7 +14,7 @@ __all__ = ['Mail', 'mail_module']
 class DummyServer(object):
     """a dummy mailer which does not send but stores mail. Can be used for testing"""
 
-    def __init__(self, printout=False, *args, **kwargs):
+    def __init__(self, printout=True, *args, **kwargs):
         """initialize the dummy mail server"""
         self.mails = []
         self.printout = printout
@@ -33,13 +32,14 @@ class DummyServer(object):
             'to' : to,
             'msg' : msg
         }
+        print "SENDING", m
         self.mails.append(m) # msg actually contains everything
         if self.printout:
             print "--------"
             print "To: ", to
             msg = email.message_from_string(msg)
             for part in msg.walk():
-                print "P1, part.get_payload(decode=True), 2
+                print 1, part.get_payload(decode=True), 2
             print "--------"
 
 
@@ -48,10 +48,10 @@ class SMTPServerFactory(object):
 
     def __init__(self, host, port):
         self.host = host
-        self.port
+        self.port = port
 
     def __call__(self):
-        return smtplib.SMTPServer(self.host, self.port)
+        return smtplib.SMTP(self.host, self.port)
 
 class DummyServerFactory(object):
     """a factory for creating smtp servers"""
@@ -60,26 +60,30 @@ class DummyServerFactory(object):
         return DummyServer()
 
 
-
 class Mail(Module):
     """a mail module for starflyer which supports txt and html mailing
     """
 
-    name = "mailer"
+    name = "mail"
 
     defaults = {
         'dummy'             : False,                # use dummy mailer?
-        'host'              : "localhost,           # host to connect to
-        'port'              : 22,                   # port to use
+        'host'              : "localhost",          # host to connect to
+        'port'              : 25,                   # port to use
+        'encoding'          : "utf-8",
+        'from_addr'         : "noreply@example.org",
+        'from_name'         : "System",
     }
 
     def finalize(self):
         """finalize the setup"""
         cfg = self.config
-        if cfg.debug:
-            self.mail_factory = DummyServerFactory()
+        if cfg.has_key("server_factory"):
+            self.server_factory = cfg.server_factory
+        elif cfg.debug:
+            self.server_factory = DummyServerFactory()
         else:
-            self.mail_factory = SMTPServerFactory(cfg.host, cfg.port)
+            self.server_factory = SMTPServerFactory(cfg.host, cfg.port)
 
     def mail(self, to, subject, msg, from_addr=None, from_name = None, **kw):
         """send a plain text email
@@ -94,13 +98,13 @@ class Mail(Module):
         # render template
         # now create the message
         msg = Message()
-        msg.set_payload(payload.encode("utf8"))
+        msg.set_payload(payload.encode(self.config.encoding))
         msg.set_charset(self.charset)
-        msg['Subject'] = Header(subject, "utf8")
+        msg['Subject'] = Header(subject, self.config.encoding)
         if from_name is None:
-            from_name = self.from_name
+            from_name = self.config.from_name
         if from_addr is None:
-            fa = msg['From'] = "%s <%s>" %(from_name, self.from_addr)
+            fa = msg['From'] = "%s <%s>" %(from_name, self.config.from_addr)
         else:
             fa = msg['From'] = "%s <%s>" %(from_name, from_addr)
         msg['To'] = to
@@ -110,7 +114,7 @@ class Mail(Module):
         server.quit()
 
 
-    def mail_html(self, to, subject, tmplname_txt, tmplname_html, from_addr=None, from_name = None, **kw):
+    def mail_html(self, to, subject, msg_txt, msg_html, from_addr=None, from_name = None, **kw):
         """send a HTML and plain text email
 
         :param to: a simple string in RFC 822 format
@@ -120,29 +124,23 @@ class Mail(Module):
         :param **kw: parameters to be used in the templates
         """
 
-        # render template
-        tmpl_txt = self.templates.get_template(tmplname_txt)
-        tmpl_html = self.templates.get_template(tmplname_html)
-        payload_txt = tmpl_txt.render(kw)
-        payload_html = tmpl_html.render(kw)
-        
         # now create the message
         msg = MIMEMultipart('alternative')
-        msg['Subject'] = Header(subject, "utf8")
+        msg['Subject'] = Header(subject, self.config.encoding)
         if from_name is None:
-            from_name = self.from_name
+            from_name = self.config.from_name
         if from_addr is None:
-            fa = msg['From'] = "%s <%s>" %(from_name, self.from_addr)
+            fa = msg['From'] = "%s <%s>" %(from_name, self.config.from_addr)
         else:
             fa = msg['From'] = "%s <%s>" %(from_name, from_addr)
         msg['To'] = to
         
-        part1 = MIMEText(payload_txt.encode('utf-8'), 'plain', 'utf-8')
-        part2 = MIMEText(payload_html.encode('utf-8'), 'html', 'utf-8')
+        part1 = MIMEText(msg_txt.encode(self.config.encoding), 'plain', self.config.encoding)
+        part2 = MIMEText(msg_html.encode(self.config.encoding), 'html', self.config.encoding)
         
         msg.attach(part1)
         msg.attach(part2)
-        
+       
         server = self.server_factory()
         server.sendmail(fa, [to], msg.as_string())
         server.quit()
