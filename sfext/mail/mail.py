@@ -39,7 +39,7 @@ class DummyServer(object):
             print "To: ", to
             msg = email.message_from_string(msg)
             for part in msg.walk():
-                print "P1, part.get_payload(decode=True), 2
+                print 1, part.get_payload(decode=True), 2
             print "--------"
 
 
@@ -69,7 +69,7 @@ class Mail(Module):
 
     defaults = {
         'dummy'             : False,                # use dummy mailer?
-        'host'              : "localhost,           # host to connect to
+        'host'              : "localhost",          # host to connect to
         'port'              : 22,                   # port to use
     }
 
