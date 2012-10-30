@@ -75,6 +75,11 @@ class Mail(Module):
         'from_name'         : "System",
     }
 
+    config_types = {
+        'debug' : bool,
+        'port' : int,
+    }
+
     def finalize(self):
         """finalize the setup"""
         cfg = self.config
