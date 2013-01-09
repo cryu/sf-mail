@@ -104,7 +104,7 @@ class Mail(Module):
         # now create the message
         msg = Message()
         msg.set_payload(msg_txt.encode(self.config.encoding))
-        #msg.set_charset(self.charset)
+        msg.set_charset(self.config.encoding)
         msg['Subject'] = Header(subject, self.config.encoding)
         if from_name is None:
             from_name = self.config.from_name
