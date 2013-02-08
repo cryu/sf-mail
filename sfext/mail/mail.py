@@ -90,22 +90,26 @@ class Mail(Module):
         else:
             self.server_factory = SMTPServerFactory(cfg.host, cfg.port)
 
-    def mail(self, to, subject, msg_txt, from_addr=None, from_name = None, **kw):
+    def mail(self, to, subject, msg_txt, from_addr=None, from_name = None, encoding = None, headers = {}, **kw):
         """send a plain text email
 
         :param to: a simple string in RFC 822 format
         :param subject: The subject of the email
         :param msg_txt: The actual text of the message 
         :param tmplname: template name to be used
+        :param encoding: optional encoding to use (if None it will default to configured encoding which defaults to utf-8)
         :param **kw: parameters to be used in the template
         """
 
         # render template
         # now create the message
         msg = Message()
-        msg.set_payload(msg_txt.encode(self.config.encoding))
-        msg.set_charset(self.config.encoding)
-        msg['Subject'] = Header(subject, self.config.encoding)
+        enc = self.config.encoding
+        if encoding is not None:
+            enc = encoding
+        msg.set_payload(msg_txt.encode(enc))
+        msg.set_charset(enc)
+        msg['Subject'] = Header(subject, enc)
         if from_name is None:
             from_name = self.config.from_name
         if from_addr is None:
@@ -113,6 +117,12 @@ class Mail(Module):
         else:
             fa = msg['From'] = "%s <%s>" %(from_name, from_addr)
         msg['To'] = to
+
+        # set additional headers
+        for k,v in headers.items():
+            if k in msg:
+                del msg[k]
+            msg[k] = v
 
         server = self.server_factory()
         server.sendmail(fa, [to], msg.as_string())
