@@ -90,7 +90,8 @@ class Mail(Module):
         else:
             self.server_factory = SMTPServerFactory(cfg.host, cfg.port)
 
-    def mail(self, to, subject, msg_txt, from_addr=None, from_name = None, encoding = None, headers = {}, **kw):
+    def mail(self, to, subject, msg_txt, from_addr=None, from_name = None, encoding = None, 
+                headers = {}, cc = [], bcc = [], **kw):
         """send a plain text email
 
         :param to: a simple string in RFC 822 format
@@ -98,6 +99,8 @@ class Mail(Module):
         :param msg_txt: The actual text of the message 
         :param tmplname: template name to be used
         :param encoding: optional encoding to use (if None it will default to configured encoding which defaults to utf-8)
+        :param cc: list of email addresses to CC the mail to
+        :param bcc: list of email addresses to BCC the mail to
         :param **kw: parameters to be used in the template
         """
 
@@ -117,7 +120,8 @@ class Mail(Module):
         else:
             fa = msg['From'] = "%s <%s>" %(from_name, from_addr)
         msg['To'] = to
-
+        if len(cc)>0:
+            msg['CC'] = ",".join(cc)
         # set additional headers
         for k,v in headers.items():
             if k in msg:
@@ -125,7 +129,7 @@ class Mail(Module):
             msg[k] = v
 
         server = self.server_factory()
-        server.sendmail(fa, [to], msg.as_string())
+        server.sendmail(fa, [to] + cc + bcc, msg.as_string())
         server.quit()
 
 
