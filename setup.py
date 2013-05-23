@@ -24,7 +24,6 @@ setup(
     zip_safe=False,
     platforms='any',
     install_requires=[
-        'setuptools',
         'starflyer',
     ],
     include_package_data=True,
