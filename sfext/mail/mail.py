@@ -14,7 +14,7 @@ __all__ = ['Mail', 'mail_module']
 class DummyServer(object):
     """a dummy mailer which does not send but stores mail. Can be used for testing"""
 
-    def __init__(self, printout=True, *args, **kwargs):
+    def __init__(self, printout=False, *args, **kwargs):
         """initialize the dummy mail server"""
         self.mails = []
         self.printout = printout
@@ -32,7 +32,6 @@ class DummyServer(object):
             'to' : to,
             'msg' : msg
         }
-        print "SENDING", m
         self.mails.append(m) # msg actually contains everything
         if self.printout:
             print "--------"
@@ -65,6 +64,10 @@ class Mail(Module):
     """
 
     name = "mail"
+    last_mail = None
+    last_to = None
+    last_msg_txt = None
+    last_msg_html = None
 
     defaults = {
         'dummy'             : False,                # use dummy mailer?
@@ -120,20 +123,30 @@ class Mail(Module):
         else:
             fa = msg['From'] = "%s <%s>" %(from_name, from_addr)
         msg['To'] = to
+
+        # add CC header
         if len(cc)>0:
             msg['CC'] = ",".join(cc)
+
         # set additional headers
         for k,v in headers.items():
             if k in msg:
                 del msg[k]
             msg[k] = v
 
+        # remember last mail for testing purposes
+        if self.app.config.testing:
+            self.last_mail = msg
+            self.last_to = to
+            self.last_msg_txt = msg_txt
+
         server = self.server_factory()
         server.sendmail(fa, [to] + cc + bcc, msg.as_string())
         server.quit()
 
 
-    def mail_html(self, to, subject, msg_txt, msg_html, from_addr=None, from_name = None, **kw):
+    def mail_html(self, to, subject, msg_txt, msg_html, from_addr=None, from_name = None,
+                headers = {}, cc = [], bcc = [], **kw):
         """send a HTML and plain text email
 
         :param to: a simple string in RFC 822 format
@@ -153,17 +166,33 @@ class Mail(Module):
         else:
             fa = msg['From'] = "%s <%s>" %(from_name, from_addr)
         msg['To'] = to
+
+        # add CC if given
+        if len(cc)>0:
+            msg['CC'] = ",".join(cc)
         
         part1 = MIMEText(msg_txt.encode(self.config.encoding), 'plain', self.config.encoding)
         part2 = MIMEText(msg_html.encode(self.config.encoding), 'html', self.config.encoding)
         
         msg.attach(part1)
         msg.attach(part2)
-       
-        server = self.server_factory()
-        server.sendmail(fa, [to], msg.as_string())
-        server.quit()
 
+        # set additional headers
+        for k,v in headers.items():
+            if k in msg:
+                del msg[k]
+            msg[k] = v
+
+        if self.app.config.testing:
+            self.last_mail = msg
+            self.last_to = to
+            self.last_msg_txt = msg_txt
+            self.last_msg_html = msg_html
+
+        server = self.server_factory()
+        server.sendmail(fa, [to] + cc + bcc, msg.as_string())
+        server.quit()
+       
 mail_module = Mail(__name__)
 
 
