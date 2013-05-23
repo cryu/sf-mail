@@ -76,6 +76,7 @@ class Mail(Module):
         'encoding'          : "utf-8",
         'from_addr'         : "noreply@example.org",
         'from_name'         : "System",
+        'debug'             : False,
     }
 
     config_types = {
