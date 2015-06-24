@@ -56,7 +56,7 @@ class DummyServerFactory(object):
     """a factory for creating smtp servers"""
 
     def __call__(self):
-        return DummyServer()
+        return DummyServer(printout=True)
 
 
 class Mail(Module):
