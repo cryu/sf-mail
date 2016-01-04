@@ -14,7 +14,7 @@ __all__ = ['Mail', 'mail_module']
 class DummyServer(object):
     """a dummy mailer which does not send but stores mail. Can be used for testing"""
 
-    def __init__(self, printout=False, *args, **kwargs):
+    def __init__(self, printout=True, *args, **kwargs):
         """initialize the dummy mail server"""
         self.mails = []
         self.printout = printout
