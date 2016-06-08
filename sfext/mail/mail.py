@@ -54,7 +54,7 @@ class SMTPServerFactory(object):
     def __call__(self):
         connection = smtplib.SMTP(self.host, self.port)
         if self.username is not None:
-            connection.login(self.username, self.password)
+            connection.login(str(self.username), str(self.password))
         return connection
 
 class DummyServerFactory(object):
