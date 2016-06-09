@@ -4,13 +4,22 @@ starflyer - mail
 
 Mail module for starflyer
 
+Changelog
+---------
+
+2016-07-09
+**********
+
+* implemented SMTP login. provider username and password to authenticate with an smtp server
+
+
 """
 from setuptools import setup
 
 
 setup(
     name='sf-mail',
-    version='1.0',
+    version='1.1',
     url='',
     license='BSD',
     author='Christian Scholz',
