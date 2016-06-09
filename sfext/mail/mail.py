@@ -45,18 +45,23 @@ class DummyServer(object):
 class SMTPServerFactory(object):
     """a factory for creating smtp servers"""
 
-    def __init__(self, host, port):
+    def __init__(self, host, port, username = None, password = None):
         self.host = host
         self.port = port
+        self.username = username
+        self.password = password
 
     def __call__(self):
-        return smtplib.SMTP(self.host, self.port)
+        connection = smtplib.SMTP(self.host, self.port)
+        if self.username is not None:
+            connection.login(str(self.username), str(self.password))
+        return connection
 
 class DummyServerFactory(object):
     """a factory for creating smtp servers"""
 
     def __call__(self):
-        return DummyServer()
+        return DummyServer(printout=True)
 
 
 class Mail(Module):
@@ -73,6 +78,8 @@ class Mail(Module):
         'dummy'             : False,                # use dummy mailer?
         'host'              : "localhost",          # host to connect to
         'port'              : 25,                   # port to use
+        'username'          : None,                 # username to use or None for anonymous
+        'password'          : None,                 # password for the username
         'encoding'          : "utf-8",
         'from_addr'         : "noreply@example.org",
         'from_name'         : "System",
@@ -92,7 +99,7 @@ class Mail(Module):
         elif cfg.debug:
             self.server_factory = DummyServerFactory()
         else:
-            self.server_factory = SMTPServerFactory(cfg.host, cfg.port)
+            self.server_factory = SMTPServerFactory(cfg.host, cfg.port, cfg.username, cfg.password)
 
     def mail(self, to, subject, msg_txt, from_addr=None, from_name = None, encoding = None, 
                 headers = {}, cc = [], bcc = [], **kw):
