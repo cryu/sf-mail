@@ -10,7 +10,7 @@ from setuptools import setup
 
 setup(
     name='sf-mail',
-    version='0.1-dev',
+    version='1.0',
     url='',
     license='BSD',
     author='Christian Scholz',
