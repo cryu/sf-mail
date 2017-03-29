@@ -7,10 +7,16 @@ Mail module for starflyer
 Changelog
 ---------
 
+2017-03-28
+**********
+
+* implemented SSL support for mail server
+
 2016-07-09
 **********
 
 * implemented SMTP login. provider username and password to authenticate with an smtp server
+
 
 
 """
@@ -19,7 +25,7 @@ import sys, os
 
 setup(
     name='sf-mail',
-    version='1.1.1',
+    version='1.2',
     url='',
     license='BSD',
     author='Christian Scholz',

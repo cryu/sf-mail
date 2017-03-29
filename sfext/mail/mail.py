@@ -48,14 +48,19 @@ class DummyServer(object):
 class SMTPServerFactory(object):
     """a factory for creating smtp servers"""
 
-    def __init__(self, host, port, username = None, password = None):
+    def __init__(self, host, port, username = None, password = None, use_ssl = False):
         self.host = host
         self.port = port
         self.username = username
         self.password = password
+        self.use_ssl = use_ssl
 
     def __call__(self):
-        connection = smtplib.SMTP(self.host, self.port)
+        if self.use_ssl:
+            smtp = smtplib.SMTP_SSL
+        else:
+            smtp = smtplib.SMTP
+        connection = smtp(self.host, self.port)
         if self.username is not None:
             connection.login(str(self.username), str(self.password))
         return connection
@@ -87,6 +92,7 @@ class Mail(Module):
         'from_addr'         : "noreply@example.org",
         'from_name'         : "System",
         'debug'             : False,
+        'use_ssl'           : False,
     }
 
     config_types = {
@@ -102,15 +108,15 @@ class Mail(Module):
         elif cfg.debug:
             self.server_factory = DummyServerFactory()
         else:
-            self.server_factory = SMTPServerFactory(cfg.host, cfg.port, cfg.username, cfg.password)
+            self.server_factory = SMTPServerFactory(cfg.host, cfg.port, cfg.username, cfg.password, cfg.use_ssl)
 
-    def mail(self, to, subject, msg_txt, from_addr=None, from_name = None, encoding = None, 
+    def mail(self, to, subject, msg_txt, from_addr=None, from_name = None, encoding = None,
                 headers = {}, cc = [], bcc = [], **kw):
         """send a plain text email
 
         :param to: a simple string in RFC 822 format
         :param subject: The subject of the email
-        :param msg_txt: The actual text of the message 
+        :param msg_txt: The actual text of the message
         :param tmplname: template name to be used
         :param encoding: optional encoding to use (if None it will default to configured encoding which defaults to utf-8)
         :param cc: list of email addresses to CC the mail to
@@ -154,7 +160,6 @@ class Mail(Module):
         server = self.server_factory()
         server.sendmail(fa, [to] + cc + bcc, msg.as_string())
         server.quit()
-
 
     def mail_html(self, to, subject, msg_txt, msg_html, from_addr=None, from_name = None,
                 headers = {}, cc = [], bcc = [], **kw):
