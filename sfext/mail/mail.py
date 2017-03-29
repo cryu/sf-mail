@@ -36,10 +36,13 @@ class DummyServer(object):
         if self.printout:
             print "--------"
             print "To: ", to
+            print msg
+            print "--------"
             msg = email.message_from_string(msg)
             for part in msg.walk():
                 print 1, part.get_payload(decode=True), 2
             print "--------"
+            print "*"*80
 
 
 class SMTPServerFactory(object):

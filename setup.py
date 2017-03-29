@@ -14,12 +14,12 @@ Changelog
 
 
 """
-from setuptools import setup
-
+from setuptools import setup, find_packages
+import sys, os
 
 setup(
     name='sf-mail',
-    version='1.1',
+    version='1.1.1',
     url='',
     license='BSD',
     author='Christian Scholz',
