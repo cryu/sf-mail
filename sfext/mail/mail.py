@@ -6,6 +6,7 @@ from email.charset import Charset, QP
 from email.message import Message
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
 import email
 
 
@@ -111,7 +112,7 @@ class Mail(Module):
             self.server_factory = SMTPServerFactory(cfg.host, cfg.port, cfg.username, cfg.password, cfg.use_ssl)
 
     def mail(self, to, subject, msg_txt, from_addr=None, from_name = None, encoding = None,
-                headers = {}, cc = [], bcc = [], **kw):
+                headers = {}, cc = [], bcc = [], attachments=[], **kw):
         """send a plain text email
 
         :param to: a simple string in RFC 822 format
@@ -124,14 +125,26 @@ class Mail(Module):
         :param **kw: parameters to be used in the template
         """
 
-        # render template
-        # now create the message
-        msg = Message()
         enc = self.config.encoding
         if encoding is not None:
             enc = encoding
-        msg.set_payload(msg_txt.encode(enc))
-        msg.set_charset(enc)
+
+        # render template
+        # now create the message
+        if len(attachments) > 0:
+            msg = MIMEMultipart()
+            msg.attach(MIMEText(msg_txt.encode(enc), 'plain', enc))
+            for a in attachments:
+                part = MIMEApplication(
+                    a['data'],
+                    Name=a['filename']
+                )
+                part.add_header('content-disposition', 'attachment', filename = ('utf-8', '', a['filename']))
+                msg.attach(part)
+        else:
+            msg = Message()
+            msg.set_payload(msg_txt.encode(enc))
+            msg.set_charset(enc)
         msg['Subject'] = Header(subject, enc)
         if from_name is None:
             from_name = self.config.from_name
@@ -186,10 +199,10 @@ class Mail(Module):
         # add CC if given
         if len(cc)>0:
             msg['CC'] = ",".join(cc)
-        
+
         part1 = MIMEText(msg_txt.encode(self.config.encoding), 'plain', self.config.encoding)
         part2 = MIMEText(msg_html.encode(self.config.encoding), 'html', self.config.encoding)
-        
+
         msg.attach(part1)
         msg.attach(part2)
 
@@ -208,7 +221,7 @@ class Mail(Module):
         server = self.server_factory()
         server.sendmail(fa, [to] + cc + bcc, msg.as_string())
         server.quit()
-       
+
 mail_module = Mail(__name__)
 
 
