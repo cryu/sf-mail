@@ -139,7 +139,7 @@ class Mail(Module):
                     a['data'],
                     Name=a['filename']
                 )
-                part.add_header('content-disposition', 'attachment', filename = ('utf-8', '', a['filename']))
+                part.add_header('content-disposition', 'attachment', filename = a['filename'])
                 msg.attach(part)
         else:
             msg = Message()
