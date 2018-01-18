@@ -115,7 +115,7 @@ class Mail(Module):
                 headers = {}, cc = [], bcc = [], attachments=[], **kw):
         """send a plain text email
 
-        :param to: a simple string in RFC 822 format
+        :param to: a simple string in RFC 822 format or a list of strings
         :param subject: The subject of the email
         :param msg_txt: The actual text of the message
         :param tmplname: template name to be used
@@ -128,6 +128,9 @@ class Mail(Module):
         enc = self.config.encoding
         if encoding is not None:
             enc = encoding
+
+        if not isinstance(to, list):
+            to = [m.strip() for m in to.split(',')]
 
         # render template
         # now create the message
@@ -152,7 +155,7 @@ class Mail(Module):
             fa = msg['From'] = "%s <%s>" %(from_name, self.config.from_addr)
         else:
             fa = msg['From'] = "%s <%s>" %(from_name, from_addr)
-        msg['To'] = to
+        msg['To'] = ','.join(to)
 
         # add CC header
         if len(cc)>0:
@@ -171,19 +174,22 @@ class Mail(Module):
             self.last_msg_txt = msg_txt
 
         server = self.server_factory()
-        server.sendmail(fa, [to] + cc + bcc, msg.as_string())
+        server.sendmail(fa, to + cc + bcc, msg.as_string())
         server.quit()
 
     def mail_html(self, to, subject, msg_txt, msg_html, from_addr=None, from_name = None,
                 headers = {}, cc = [], bcc = [], **kw):
         """send a HTML and plain text email
 
-        :param to: a simple string in RFC 822 format
+        :param to: a simple string in RFC 822 format or a list of strings
         :param subject: The subject of the email
         :param tmplname_txt: template name to be used for the plain text version (not used if None)
         :param tmplname_html: template name to be used for the HTML version (not used if None)
         :param **kw: parameters to be used in the templates
         """
+
+        if not isinstance(to, list):
+            to = [m.strip() for m in to.split(',')]
 
         # now create the message
         msg = MIMEMultipart('alternative')
@@ -194,7 +200,7 @@ class Mail(Module):
             fa = msg['From'] = "%s <%s>" %(from_name, self.config.from_addr)
         else:
             fa = msg['From'] = "%s <%s>" %(from_name, from_addr)
-        msg['To'] = to
+        msg['To'] = ','.join(to)
 
         # add CC if given
         if len(cc)>0:
@@ -219,7 +225,7 @@ class Mail(Module):
             self.last_msg_html = msg_html
 
         server = self.server_factory()
-        server.sendmail(fa, [to] + cc + bcc, msg.as_string())
+        server.sendmail(fa, to + cc + bcc, msg.as_string())
         server.quit()
 
 mail_module = Mail(__name__)
